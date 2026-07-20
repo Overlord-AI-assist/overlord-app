@@ -2,9 +2,11 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Overlord App — Звукорежиссёр</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <!-- Подключаем Three.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <style>
         /* ===== ГЛОБАЛЬНЫЕ СТИЛИ ===== */
         * {
@@ -255,6 +257,75 @@
             line-height: 1.6;
         }
 
+        /* ===== 3D-игра ===== */
+        .game-3d-container {
+            background: rgba(255,255,255,0.04);
+            border-radius: 16px;
+            padding: 16px;
+            border: 1px solid rgba(255,255,255,0.06);
+            position: relative;
+        }
+
+        #diceCanvas {
+            width: 100%;
+            height: 300px;
+            display: block;
+            border-radius: 12px;
+            background: #0a0a0f;
+            touch-action: none;
+        }
+
+        .dice-controls {
+            display: flex;
+            justify-content: center;
+            margin-top: 12px;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .dice-controls button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #7c3aed, #4f46e5);
+            color: #fff;
+            font-weight: 600;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 4px 15px rgba(79,70,229,0.3);
+            flex: 1;
+            min-width: 120px;
+        }
+
+        .dice-controls button:disabled {
+            opacity: 0.5;
+            pointer-events: none;
+        }
+
+        .dice-result {
+            text-align: center;
+            color: #c4b5fd;
+            font-size: 18px;
+            margin-top: 10px;
+            min-height: 30px;
+        }
+
+        .dice-history {
+            margin-top: 12px;
+            max-height: 80px;
+            overflow-y: auto;
+            font-size: 13px;
+            color: #b0b0c8;
+            border-top: 1px solid rgba(255,255,255,0.05);
+            padding-top: 10px;
+        }
+
+        .dice-history div {
+            padding: 3px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.03);
+        }
+
         /* ===== ФУТЕР ===== */
         .footer {
             margin-top: 32px;
@@ -271,6 +342,7 @@
             .header h1 { font-size: 26px; }
             .tab-btn { font-size: 10px; padding: 8px 0; }
             .card .price { font-size: 24px; }
+            #diceCanvas { height: 200px; }
         }
     </style>
 </head>
@@ -378,36 +450,15 @@
             </div>
         </div>
 
-        <!-- ======= ВКЛАДКА GAMES (игра "Бросок костей") ======= -->
+        <!-- ======= ВКЛАДКА GAMES (3D КОСТИ) ======= -->
         <div id="games" class="tab-content">
-            <div style="background: rgba(255,255,255,0.04); border-radius: 16px; padding: 20px; border: 1px solid rgba(255,255,255,0.06);">
-                <h3 style="color: #c4b5fd; font-size: 20px; margin-bottom: 12px; display: flex; align-items: center; gap: 10px;">
-                    🎲 Бросок костей
-                </h3>
-                <p style="color: #b0b0c8; font-size: 14px; margin-bottom: 16px;">
-                    Нажми на кнопку, чтобы бросить две кости.
-                </p>
-
-                <div style="display: flex; justify-content: center; gap: 30px; margin: 20px 0;">
-                    <div id="dice1" style="width: 70px; height: 70px; background: rgba(255,255,255,0.08); border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 42px; font-weight: 700; color: #e0def0; border: 2px solid rgba(130,70,255,0.3); transition: 0.2s;">
-                        ⚀
-                    </div>
-                    <div id="dice2" style="width: 70px; height: 70px; background: rgba(255,255,255,0.08); border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 42px; font-weight: 700; color: #e0def0; border: 2px solid rgba(130,70,255,0.3); transition: 0.2s;">
-                        ⚀
-                    </div>
+            <div class="game-3d-container">
+                <canvas id="diceCanvas"></canvas>
+                <div class="dice-controls">
+                    <button id="rollDiceBtn">🎲 Бросить кости</button>
                 </div>
-
-                <div id="diceResult" style="text-align: center; font-size: 18px; color: #c4b5fd; margin-bottom: 12px;">
-                    Сумма: <span id="diceSum">2</span>
-                </div>
-
-                <button id="rollDiceBtn" 
-                        style="display: block; width: 100%; padding: 14px; border: none; border-radius: 14px; background: linear-gradient(135deg, #7c3aed, #4f46e5); color: #fff; font-size: 18px; font-weight: 600; cursor: pointer; transition: all 0.3s; box-shadow: 0 6px 20px rgba(79,70,229,0.3);">
-                    🎲 Бросить кости
-                </button>
-
-                <div id="diceHistory" style="margin-top: 16px; max-height: 120px; overflow-y: auto; font-size: 13px; color: #b0b0c8; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 12px;">
-                </div>
+                <div class="dice-result" id="diceResult">Нажмите «Бросить кости»</div>
+                <div class="dice-history" id="diceHistory"></div>
             </div>
         </div>
 
@@ -444,11 +495,294 @@
                 this.classList.add('active');
                 const tabId = this.dataset.tab;
                 document.getElementById(tabId).classList.add('active');
+
+                // Если открыли вкладку GAMES — инициализируем 3D сцену (если ещё не создана)
+                if (tabId === 'games' && !window.diceSceneReady) {
+                    initDice3D();
+                }
             });
         });
 
         // ============================================================
-        // 2.  Инициализация Telegram WebApp
+        // 2.  3D игра "Бросок костей" на Three.js
+        // ============================================================
+        let diceScene, diceCamera, diceRenderer;
+        let dice1, dice2;
+        let isRolling = false;
+        let history = [];
+        let animating = false;
+
+        // Генерация текстур для граней кубика (точки)
+        function createFaceTexture(dots) {
+            const canvas = document.createElement('canvas');
+            canvas.width = 200;
+            canvas.height = 200;
+            const ctx = canvas.getContext('2d');
+
+            // Белый фон
+            ctx.fillStyle = '#f5f5f0';
+            ctx.fillRect(0, 0, 200, 200);
+            ctx.fillStyle = '#222';
+            const radius = 18;
+            const positions = {
+                1: [[100, 100]],
+                2: [[50, 50], [150, 150]],
+                3: [[50, 50], [100, 100], [150, 150]],
+                4: [[50, 50], [150, 50], [50, 150], [150, 150]],
+                5: [[50, 50], [150, 50], [100, 100], [50, 150], [150, 150]],
+                6: [[50, 50], [150, 50], [50, 100], [150, 100], [50, 150], [150, 150]]
+            };
+            const points = positions[dots] || [];
+            points.forEach(p => {
+                ctx.beginPath();
+                ctx.arc(p[0], p[1], radius, 0, Math.PI * 2);
+                ctx.fill();
+            });
+
+            return new THREE.CanvasTexture(canvas);
+        }
+
+        function createDiceTextures() {
+            const textures = [];
+            for (let i = 1; i <= 6; i++) {
+                textures.push(createFaceTexture(i));
+            }
+            return textures;
+        }
+
+        function createDie(textures) {
+            // Материалы для каждой грани: правый, левый, верх, низ, перед, зад
+            const matConfig = [
+                textures[0], // право (1)
+                textures[1], // лево (2)
+                textures[2], // верх (3)
+                textures[3], // низ (4)
+                textures[4], // перед (5)
+                textures[5]  // зад (6)
+            ];
+            const materials = matConfig.map(t => new THREE.MeshStandardMaterial({ map: t, roughness: 0.3, metalness: 0.1 }));
+            const geometry = new THREE.BoxGeometry(1.2, 1.2, 1.2);
+            return new THREE.Mesh(geometry, materials);
+        }
+
+        function initDice3D() {
+            if (window.diceSceneReady) return;
+
+            const canvas = document.getElementById('diceCanvas');
+            const container = canvas.parentElement;
+
+            // Настраиваем сцену
+            diceScene = new THREE.Scene();
+            diceScene.background = new THREE.Color(0x0a0a0f);
+
+            // Камера
+            const aspect = canvas.clientWidth / canvas.clientHeight;
+            diceCamera = new THREE.PerspectiveCamera(45, aspect, 0.1, 1000);
+            diceCamera.position.set(3, 2, 5);
+            diceCamera.lookAt(0, 0, 0);
+
+            // Рендерер
+            diceRenderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+            diceRenderer.setSize(canvas.clientWidth, canvas.clientHeight);
+            diceRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            diceRenderer.shadowMap.enabled = true;
+            diceRenderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+            // Освещение
+            const ambientLight = new THREE.AmbientLight(0x404060);
+            diceScene.add(ambientLight);
+
+            const dirLight = new THREE.DirectionalLight(0xffffff, 1);
+            dirLight.position.set(5, 10, 7);
+            dirLight.castShadow = true;
+            diceScene.add(dirLight);
+
+            const fillLight = new THREE.DirectionalLight(0x8866ff, 0.5);
+            fillLight.position.set(-3, 1, 2);
+            diceScene.add(fillLight);
+
+            const backLight = new THREE.DirectionalLight(0x8866ff, 0.3);
+            backLight.position.set(0, -1, -5);
+            diceScene.add(backLight);
+
+            // Пол (для теней)
+            const planeGeom = new THREE.PlaneGeometry(6, 6);
+            const planeMat = new THREE.ShadowMaterial({ opacity: 0.3 });
+            const plane = new THREE.Mesh(planeGeom, planeMat);
+            plane.rotation.x = -Math.PI / 2;
+            plane.position.y = -0.8;
+            plane.receiveShadow = true;
+            diceScene.add(plane);
+
+            // Создаём текстуры и кубики
+            const textures = createDiceTextures();
+            dice1 = createDie(textures);
+            dice1.castShadow = true;
+            dice1.receiveShadow = true;
+            dice1.position.set(-0.8, 0, 0);
+            diceScene.add(dice1);
+
+            dice2 = createDie(textures);
+            dice2.castShadow = true;
+            dice2.receiveShadow = true;
+            dice2.position.set(0.8, 0, 0);
+            diceScene.add(dice2);
+
+            // Обработка изменения размера окна
+            const resize = () => {
+                const w = canvas.clientWidth;
+                const h = canvas.clientHeight;
+                if (w === 0 || h === 0) return;
+                diceCamera.aspect = w / h;
+                diceCamera.updateProjectionMatrix();
+                diceRenderer.setSize(w, h);
+            };
+            window.addEventListener('resize', resize);
+            // Также отслеживаем изменение размеров контейнера (для адаптивности)
+            const ro = new ResizeObserver(resize);
+            ro.observe(container);
+
+            window.diceSceneReady = true;
+
+            // Запускаем анимацию вращения (пока кубики стоят)
+            animateDiceIdle();
+
+            // Первый бросок - случайное начальное положение
+            randomizeDiceInitial();
+
+            // Обновляем результат
+            updateResult(1, 1);
+        }
+
+        function randomizeDiceInitial() {
+            // Устанавливаем случайные начальные углы
+            dice1.rotation.x = Math.random() * Math.PI * 2;
+            dice1.rotation.y = Math.random() * Math.PI * 2;
+            dice1.rotation.z = Math.random() * Math.PI * 2;
+            dice2.rotation.x = Math.random() * Math.PI * 2;
+            dice2.rotation.y = Math.random() * Math.PI * 2;
+            dice2.rotation.z = Math.random() * Math.PI * 2;
+        }
+
+        let idleAnimId = null;
+
+        function animateDiceIdle() {
+            if (idleAnimId) cancelAnimationFrame(idleAnimId);
+            function idle() {
+                if (!diceScene || isRolling) {
+                    idleAnimId = requestAnimationFrame(idle);
+                    return;
+                }
+                const time = Date.now() * 0.001;
+                dice1.rotation.y += 0.003;
+                dice1.rotation.x += 0.001;
+                dice2.rotation.y -= 0.004;
+                dice2.rotation.z += 0.002;
+                diceRenderer.render(diceScene, diceCamera);
+                idleAnimId = requestAnimationFrame(idle);
+            }
+            idle();
+        }
+
+        // Функция броска
+        document.getElementById('rollDiceBtn').addEventListener('click', rollDice);
+
+        function rollDice() {
+            if (isRolling || !diceScene) return;
+            isRolling = true;
+            const btn = document.getElementById('rollDiceBtn');
+            btn.disabled = true;
+            btn.textContent = '🔄 Бросок...';
+
+            // Генерируем случайные числа
+            const val1 = Math.floor(Math.random() * 6) + 1;
+            const val2 = Math.floor(Math.random() * 6) + 1;
+
+            // Вычисляем итоговые углы поворота для каждой грани
+            // Упрощённо: каждый кубик делает несколько оборотов и останавливается на нужной грани
+            // Для простоты мы просто анимируем вращение на случайные углы, а в конце показываем числа
+            // Но чтобы было реалистично, можно задать конкретные углы для каждой грани.
+            // Здесь используем простой подход: вращаем на случайные большие углы, затем останавливаем.
+
+            // Для более реалистичного эффекта мы будем вращать с ускорением, затем замедляться.
+            // Используем анимацию с easing.
+
+            const duration = 1500; // ms
+            const startTime = performance.now();
+
+            // Начальные углы
+            const startRot1 = { x: dice1.rotation.x, y: dice1.rotation.y, z: dice1.rotation.z };
+            const startRot2 = { x: dice2.rotation.x, y: dice2.rotation.y, z: dice2.rotation.z };
+
+            // Конечные углы (несколько оборотов + финальный поворот на нужную грань)
+            // Для упрощения: мы будем вращать на случайные большие углы, а затем покажем число.
+            // Но чтобы визуально грань соответствовала числу, нужно рассчитать углы.
+            // Здесь мы используем упрощённый подход: вращаемся случайно, а в конце показываем число.
+            // Для более крутого эффекта можно использовать физику, но это сложно.
+            // Ограничимся красивой анимацией вращения и отображением результата.
+
+            // Генерируем случайные конечные углы с большими значениями (несколько оборотов)
+            const endRot1 = {
+                x: startRot1.x + (Math.random() * 4 + 2) * Math.PI,
+                y: startRot1.y + (Math.random() * 4 + 2) * Math.PI,
+                z: startRot1.z + (Math.random() * 2 + 1) * Math.PI
+            };
+            const endRot2 = {
+                x: startRot2.x + (Math.random() * 4 + 2) * Math.PI,
+                y: startRot2.y + (Math.random() * 4 + 2) * Math.PI,
+                z: startRot2.z + (Math.random() * 2 + 1) * Math.PI
+            };
+
+            function animateRoll(time) {
+                const elapsed = time - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+                // easing: ease-out cubic
+                const ease = 1 - Math.pow(1 - progress, 3);
+
+                dice1.rotation.x = startRot1.x + (endRot1.x - startRot1.x) * ease;
+                dice1.rotation.y = startRot1.y + (endRot1.y - startRot1.y) * ease;
+                dice1.rotation.z = startRot1.z + (endRot1.z - startRot1.z) * ease;
+
+                dice2.rotation.x = startRot2.x + (endRot2.x - startRot2.x) * ease;
+                dice2.rotation.y = startRot2.y + (endRot2.y - startRot2.y) * ease;
+                dice2.rotation.z = startRot2.z + (endRot2.z - startRot2.z) * ease;
+
+                diceRenderer.render(diceScene, diceCamera);
+
+                if (progress < 1) {
+                    requestAnimationFrame(animateRoll);
+                } else {
+                    // Завершение
+                    isRolling = false;
+                    btn.disabled = false;
+                    btn.textContent = '🎲 Бросить кости';
+                    updateResult(val1, val2);
+                    addHistory(val1, val2);
+                    // Небольшой сдвиг после броска, чтобы было видно
+                }
+            }
+
+            requestAnimationFrame(animateRoll);
+        }
+
+        function updateResult(v1, v2) {
+            const sum = v1 + v2;
+            document.getElementById('diceResult').textContent = `🎲 ${v1} + ${v2} = ${sum}`;
+        }
+
+        function addHistory(v1, v2) {
+            const sum = v1 + v2;
+            const entry = document.createElement('div');
+            entry.textContent = `🎲 ${v1} + ${v2} = ${sum}`;
+            const historyDiv = document.getElementById('diceHistory');
+            historyDiv.prepend(entry);
+            if (historyDiv.children.length > 10) {
+                historyDiv.removeChild(historyDiv.lastChild);
+            }
+        }
+
+        // ============================================================
+        // 3.  Инициализация Telegram WebApp
         // ============================================================
         if (window.Telegram && window.Telegram.WebApp) {
             window.Telegram.WebApp.ready();
@@ -456,62 +790,18 @@
             window.Telegram.WebApp.setBackgroundColor('#0a0a0f');
         }
 
-        console.log('🚀 Overlord App — без заказа, только контакт @ceomixmaster');
-
         // ============================================================
-        // 3.  Игра "Бросок костей"
+        // 4.  Если вкладка GAMES открыта изначально (неактивна), подождём
         // ============================================================
-        (function() {
-            const dice1El = document.getElementById('dice1');
-            const dice2El = document.getElementById('dice2');
-            const diceSumEl = document.getElementById('diceSum');
-            const rollBtn = document.getElementById('rollDiceBtn');
-            const historyDiv = document.getElementById('diceHistory');
-
-            const DICE_FACES = ['⚀', '⚁', '⚂', '⚃', '⚄', '⚅'];
-
-            function rollDice() {
-                rollBtn.disabled = true;
-                rollBtn.textContent = '🎲 ...';
-                dice1El.style.transform = 'scale(0.8)';
-                dice2El.style.transform = 'scale(0.8)';
-
-                const val1 = Math.floor(Math.random() * 6) + 1;
-                const val2 = Math.floor(Math.random() * 6) + 1;
-                const sum = val1 + val2;
-
-                setTimeout(() => {
-                    dice1El.textContent = DICE_FACES[val1 - 1];
-                    dice2El.textContent = DICE_FACES[val2 - 1];
-                    dice1El.style.transform = 'scale(1)';
-                    dice2El.style.transform = 'scale(1)';
-                    diceSumEl.textContent = sum;
-
-                    const entry = document.createElement('div');
-                    entry.textContent = `🎲 ${val1} + ${val2} = ${sum}`;
-                    entry.style.padding = '4px 0';
-                    entry.style.borderBottom = '1px solid rgba(255,255,255,0.03)';
-                    historyDiv.prepend(entry);
-                    if (historyDiv.children.length > 10) {
-                        historyDiv.removeChild(historyDiv.lastChild);
-                    }
-
-                    rollBtn.disabled = false;
-                    rollBtn.textContent = '🎲 Бросить кости';
-                }, 400);
+        // При загрузке проверим, активна ли вкладка games
+        setTimeout(() => {
+            const gamesTab = document.querySelector('#games.tab-content');
+            if (gamesTab && gamesTab.classList.contains('active')) {
+                initDice3D();
             }
+        }, 100);
 
-            rollBtn.addEventListener('click', rollDice);
-
-            setTimeout(() => {
-                const val1 = Math.floor(Math.random() * 6) + 1;
-                const val2 = Math.floor(Math.random() * 6) + 1;
-                dice1El.textContent = DICE_FACES[val1 - 1];
-                dice2El.textContent = DICE_FACES[val2 - 1];
-                diceSumEl.textContent = val1 + val2;
-                historyDiv.innerHTML = `<div style="padding:4px 0; color:#5a5a74;">Начните игру!</div>`;
-            }, 100);
-        })();
+        console.log('🚀 Overlord App с 3D-костями');
     </script>
 </body>
 </html>
