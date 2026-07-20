@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+    <title>Overlord App — Звукорежиссёр</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        /* ===== ГЛОБАЛЬНЫЕ СТИЛИ ===== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, sans-serif;
+            background: #0a0a0f;
+            background-image: radial-gradient(circle at 10% 20%, rgba(80, 40, 200, 0.08) 0%, transparent 50%),
+                              radial-gradient(circle at 90% 80%, rgba(120, 60, 255, 0.06) 0%, transparent 60%);
+            min-height: 100vh;
+            padding: 20px 16px 30px;
+            color: #e8e6f0;
+            display: flex;
+            justify-content: center;
+        }
+
+        .container {
+            max-width: 480px;
+            width: 100%;
+        }
+
+        /* ===== ШАПКА ===== */
+        .header {
+            text-align: center;
+            margin-bottom: 32px;
+            position: relative;
+        }
+
+        .header .glow {
+            position: absolute;
+            top: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 120px;
+            height: 120px;
+            background: radial-gradient(circle, rgba(130, 70, 255, 0.25) 0%, transparent 70%);
+            filter: blur(40px);
+            pointer-events: none;
+        }
+
+        .header h1 {
+            font-size: 32px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #a78bfa, #7c3aed, #4f46e5);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: 1px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .header .sub {
+            font-size: 14px;
+            color: #a0a0b8;
+            margin-top: 6px;
+            letter-spacing: 2px;
+            font-weight: 300;
+            border-bottom: 1px solid rgba(130, 70, 255, 0.2);
+            padding-bottom: 14px;
+        }
+
+        .header .sub span {
+            color: #a78bfa;
+        }
+
+        /* ===== ВКЛАДКИ ===== */
+        .tabs {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 28px;
+            background: rgba(255, 255, 255, 0.04);
+            border-radius: 16px;
+            padding: 6px;
+            backdrop-filter: blur(4px);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            flex-wrap: wrap;
+        }
+
+        .tab-btn {
+            flex: 1;
+            min-width: 60px;
+            padding: 10px 0;
+            border: none;
+            border-radius: 12px;
+            background: transparent;
+            color: #9a9ab0;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            letter-spacing: 0.3px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+        }
+
+        .tab-btn .icon {
+            font-size: 14px;
+        }
+
+        .tab-btn.active {
+            background: linear-gradient(135deg, rgba(130, 70, 255, 0.3), rgba(79, 70, 229, 0.25));
+            color: #ffffff;
+            box-shadow: 0 4px 15px rgba(130, 70, 255, 0.25);
+            border: 1px solid rgba(130, 70, 255, 0.3);
+        }
+
+        .tab-btn:hover:not(.active) {
+            color: #d0d0e8;
+            background: rgba(255, 255, 255, 0.04);
+        }
+
+        /* ===== КОНТЕНТ ВКЛАДОК ===== */
+        .tab-content {
+            display: none;
+            animation: fadeSlide 0.4s cubic-bezier(0.2, 0.9, 0.3, 1);
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes fadeSlide {
+            0% { opacity: 0; transform: translateY(12px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ===== КАРТОЧКИ ПРАЙСА ===== */
+        .card {
+            background: rgba(255, 255, 255, 0.04);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 16px;
+            padding: 20px 18px;
+            margin-bottom: 14px;
+            transition: transform 0.2s, box-shadow 0.3s;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+            border-color: rgba(130, 70, 255, 0.2);
+            box-shadow: 0 12px 32px rgba(80, 40, 200, 0.15);
+        }
+
+        .card .title {
+            font-size: 17px;
+            font-weight: 600;
+            color: #f0edff;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .card .title .emoji {
+            font-size: 20px;
+        }
+
+        .card .price {
+            font-size: 28px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #a78bfa, #7c3aed);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin: 8px 0 4px;
+        }
+
+        .card .desc {
+            font-size: 14px;
+            color: #b0b0c8;
+            line-height: 1.5;
+        }
+
+        .card .badge {
+            display: inline-block;
+            background: rgba(130, 70, 255, 0.2);
+            border: 1px solid rgba(130, 70, 255, 0.2);
+            border-radius: 20px;
+            padding: 2px 12px;
+            font-size: 11px;
+            color: #a78bfa;
+            font-weight: 500;
+            letter-spacing: 0.5px;
+            margin-top: 6px;
+        }
+
+        /* ===== КОНТАКТНЫЙ БЛОК ===== */
+        .contact-block {
+            background: rgba(255,255,255,0.04);
+            border-radius: 16px;
+            padding: 20px;
+            margin-top: 16px;
+            border: 1px solid rgba(130,70,255,0.2);
+            text-align: center;
+        }
+
+        .contact-block p {
+            color: #b0b0c8;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+
+        .contact-block a {
+            display: inline-block;
+            background: linear-gradient(135deg, #7c3aed, #4f46e5);
+            color: #fff;
+            padding: 14px 24px;
+            border-radius: 30px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 16px;
+            transition: 0.2s;
+        }
+
+        .contact-block a:hover {
+            transform: scale(1.02);
+            box-shadow: 0 4px 20px rgba(79,70,229,0.4);
+        }
+
+        /* ===== БЛОКИ ДЛЯ GAMES / NEWS ===== */
+        .info-block {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 14px;
+            padding: 18px;
+            margin-bottom: 16px;
+        }
+
+        .info-block h3 {
+            color: #c4b5fd;
+            font-size: 18px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .info-block p {
+            color: #b0b0c8;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        /* ===== ФУТЕР ===== */
+        .footer {
+            margin-top: 32px;
+            text-align: center;
+            font-size: 12px;
+            color: #5a5a74;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            padding-top: 20px;
+            letter-spacing: 1px;
+        }
+
+        /* ===== АДАПТАЦИЯ ===== */
+        @media (max-width: 420px) {
+            .header h1 { font-size: 26px; }
+            .tab-btn { font-size: 10px; padding: 8px 0; }
+            .card .price { font-size: 24px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+
+        <!-- ШАПКА -->
+        <div class="header">
+            <div class="glow"></div>
+            <h1>⚡ OVERLORD</h1>
+            <div class="sub">Звукорежиссура · Сведение · Мастеринг <span>🎧</span></div>
+        </div>
+
+        <!-- ВКЛАДКИ -->
+        <div class="tabs">
+            <button class="tab-btn active" data-tab="prices">
+                <span class="icon">💰</span> Прайс
+            </button>
+            <button class="tab-btn" data-tab="works">
+                <span class="icon">🎵</span> Примеры
+            </button>
+            <button class="tab-btn" data-tab="games">
+                <span class="icon">🎮</span> GAMES
+            </button>
+            <button class="tab-btn" data-tab="news">
+                <span class="icon">📰</span> NEWS
+            </button>
+        </div>
+
+        <!-- ======= ВКЛАДКА ПРАЙС ======= -->
+        <div id="prices" class="tab-content active">
+            <div class="card">
+                <div class="title">
+                    <span class="emoji">🎵</span> Сведение + Мастеринг
+                </div>
+                <div class="price">7 000 – 15 000 ₽</div>
+                <div class="desc">
+                    Сведение и мастеринг на wav/mp3 + вокал (или мастеринг, стем-мастеринг по группам: All Drums, All Music, All FX).
+                    <br>Включает: сведение, саунд-дизайн, мастеринг, 1 серия правок.
+                </div>
+                <div class="badge">⏱ 1–7 рабочих дней</div>
+            </div>
+
+            <div class="card">
+                <div class="title">
+                    <span class="emoji">🎚️</span> WAV Track Out + Вокал
+                </div>
+                <div class="price">17 000 – 40 000 ₽</div>
+                <div class="desc">
+                    Полноценное сведение мульти-трека с вокалом и инструменталом.
+                    <br>Включает: редакция, ручная коррекция тона, замена некачественных семплов, саунд-дизайн, мастеринг, 1 серия бесплатных правок.
+                </div>
+                <div class="badge">⏱ 3–12 рабочих дней</div>
+            </div>
+
+            <div class="card">
+                <div class="title">
+                    <span class="emoji">🎧</span> Консультация
+                </div>
+                <div class="price">2 000 ₽ / час</div>
+                <div class="desc">
+                    Профессиональная консультация по вопросам звукорежиссуры, сведения, мастеринга, выбора оборудования и программного обеспечения.
+                </div>
+                <div class="badge">⏱ по договорённости</div>
+            </div>
+
+            <div class="card">
+                <div class="title">
+                    <span class="emoji">🎙️</span> Запись на студии
+                </div>
+                <div class="price">1 000 – 3 500 ₽ / час</div>
+                <div class="desc">
+                    Аренда профессиональной студии звукозаписи. В стоимость входит оборудование, помощь инженера, возможность записи вокала, инструментов и живых партий.
+                </div>
+                <div class="badge">⏱ по предварительной записи</div>
+            </div>
+
+            <!-- КОНТАКТНЫЙ БЛОК -->
+            <div class="contact-block">
+                <p>📩 Для заказа или консультации напишите мне в личные сообщения:</p>
+                <a href="https://t.me/ceomixmaster" target="_blank">✉️ @ceomixmaster</a>
+            </div>
+        </div>
+
+        <!-- ======= ВКЛАДКА ПРИМЕРЫ РАБОТ ======= -->
+        <div id="works" class="tab-content">
+            <div class="info-block">
+                <h3>🎨 PORTFOLIO</h3>
+                <p>Слушайте мои работы в плейлисте на Spotify:</p>
+                <a href="https://open.spotify.com/playlist/755qBK4ile3cTZzB2WouA8" 
+                   target="_blank" 
+                   style="display: block; background: #1DB954; color: #fff; padding: 12px 24px; border-radius: 30px; text-decoration: none; font-weight: 600; font-size: 15px; text-align: center; transition: 0.2s; margin-top: 10px;">
+                   🎧 Открыть в Spotify
+                </a>
+            </div>
+
+            <div class="info-block">
+                <h3>💿 Mixing Credits</h3>
+                <p>
+                    Работы с артистами: <strong style="color: #e0def0;">Школьник и Бау, Hunxho, Lord Polo, CODE80, Murovei, Xlazy, Витя Кончина, Felix Kotlo, kondrashin, Gurme, L izreal, Страна OZ, Nagval, МТС.Лейбл</strong> и многие другие.
+                </p>
+                <div style="margin-top: 12px; padding: 10px 14px; background: rgba(130,70,255,0.08); border-radius: 10px; border-left: 3px solid #7c3aed;">
+                    <p style="color: #a78bfa; font-size: 13px; margin: 0;">⚡ Работал по NDA с исполнителем <strong style="color: #e0def0;">6 000 000+</strong> слушателей в месяц в Яндекс.Музыка.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- ======= ВКЛАДКА GAMES (игра "Бросок костей") ======= -->
+        <div id="games" class="tab-content">
+            <div style="background: rgba(255,255,255,0.04); border-radius: 16px; padding: 20px; border: 1px solid rgba(255,255,255,0.06);">
+                <h3 style="color: #c4b5fd; font-size: 20px; margin-bottom: 12px; display: flex; align-items: center; gap: 10px;">
+                    🎲 Бросок костей
+                </h3>
+                <p style="color: #b0b0c8; font-size: 14px; margin-bottom: 16px;">
+                    Нажми на кнопку, чтобы бросить две кости.
+                </p>
+
+                <div style="display: flex; justify-content: center; gap: 30px; margin: 20px 0;">
+                    <div id="dice1" style="width: 70px; height: 70px; background: rgba(255,255,255,0.08); border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 42px; font-weight: 700; color: #e0def0; border: 2px solid rgba(130,70,255,0.3); transition: 0.2s;">
+                        ⚀
+                    </div>
+                    <div id="dice2" style="width: 70px; height: 70px; background: rgba(255,255,255,0.08); border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 42px; font-weight: 700; color: #e0def0; border: 2px solid rgba(130,70,255,0.3); transition: 0.2s;">
+                        ⚀
+                    </div>
+                </div>
+
+                <div id="diceResult" style="text-align: center; font-size: 18px; color: #c4b5fd; margin-bottom: 12px;">
+                    Сумма: <span id="diceSum">2</span>
+                </div>
+
+                <button id="rollDiceBtn" 
+                        style="display: block; width: 100%; padding: 14px; border: none; border-radius: 14px; background: linear-gradient(135deg, #7c3aed, #4f46e5); color: #fff; font-size: 18px; font-weight: 600; cursor: pointer; transition: all 0.3s; box-shadow: 0 6px 20px rgba(79,70,229,0.3);">
+                    🎲 Бросить кости
+                </button>
+
+                <div id="diceHistory" style="margin-top: 16px; max-height: 120px; overflow-y: auto; font-size: 13px; color: #b0b0c8; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 12px;">
+                </div>
+            </div>
+        </div>
+
+        <!-- ======= ВКЛАДКА NEWS ======= -->
+        <div id="news" class="tab-content">
+            <div class="info-block">
+                <h3>📰 OVERLORD NEWS</h3>
+                <div style="padding: 12px 14px; background: rgba(130,70,255,0.05); border-radius: 10px; border-left: 3px solid #7c3aed; margin-bottom: 12px;">
+                    <div style="font-size: 12px; color: #7a7a94; margin-bottom: 4px;">21.07.2026 22:09</div>
+                    <h4 style="color: #e0def0; font-size: 17px; margin-bottom: 8px;">OVERLORD ENGINE v1.0</h4>
+                    <p style="color: #b0b0c8; font-size: 14px; line-height: 1.7;">
+                        Лично для меня — всё готово. Движок отрабатывает 95% своих возможностей. Не много путается с авто-определениями, но у него система переписи Brain.json, поэтому он учится вместе с вами правильно определять стемы и классифицировать их в нужные группы. В нём нет системы AI, всё работает очень удобно. То, что тегами сложно определить, например fggkjdfgGTRdfgcklbj — движок открывает мультимедийное окно с возможностью послушать, перемотать и снизу классификация каждого инструмента, при выборе которой ваш файл попадает ровно туда, куда нужно. Жаль конечно, что система CLAP работает очень хило, а шума вокруг неё ну ппц как много. Крутое чувство, когда сделал что-то своё и оно реально работает и улучшает workflow. В моей цели нет создать AI-ассистента, который бы заменил специалиста-звукорежиссёра, моя цель — сделать нашу работу ещё интереснее, эффективнее и чуточку быстрее.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- ФУТЕР -->
+        <div class="footer">
+            Воплощаю ваш звук из головы в реальность
+        </div>
+
+    </div>
+
+    <script>
+        // ============================================================
+        // 1.  Переключение вкладок
+        // ============================================================
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(tc => tc.classList.remove('active'));
+
+                this.classList.add('active');
+                const tabId = this.dataset.tab;
+                document.getElementById(tabId).classList.add('active');
+            });
+        });
+
+        // ============================================================
+        // 2.  Инициализация Telegram WebApp
+        // ============================================================
+        if (window.Telegram && window.Telegram.WebApp) {
+            window.Telegram.WebApp.ready();
+            window.Telegram.WebApp.enableClosingConfirmation();
+            window.Telegram.WebApp.setBackgroundColor('#0a0a0f');
+        }
+
+        console.log('🚀 Overlord App — без заказа, только контакт @ceomixmaster');
+
+        // ============================================================
+        // 3.  Игра "Бросок костей"
+        // ============================================================
+        (function() {
+            const dice1El = document.getElementById('dice1');
+            const dice2El = document.getElementById('dice2');
+            const diceSumEl = document.getElementById('diceSum');
+            const rollBtn = document.getElementById('rollDiceBtn');
+            const historyDiv = document.getElementById('diceHistory');
+
+            const DICE_FACES = ['⚀', '⚁', '⚂', '⚃', '⚄', '⚅'];
+
+            function rollDice() {
+                rollBtn.disabled = true;
+                rollBtn.textContent = '🎲 ...';
+                dice1El.style.transform = 'scale(0.8)';
+                dice2El.style.transform = 'scale(0.8)';
+
+                const val1 = Math.floor(Math.random() * 6) + 1;
+                const val2 = Math.floor(Math.random() * 6) + 1;
+                const sum = val1 + val2;
+
+                setTimeout(() => {
+                    dice1El.textContent = DICE_FACES[val1 - 1];
+                    dice2El.textContent = DICE_FACES[val2 - 1];
+                    dice1El.style.transform = 'scale(1)';
+                    dice2El.style.transform = 'scale(1)';
+                    diceSumEl.textContent = sum;
+
+                    const entry = document.createElement('div');
+                    entry.textContent = `🎲 ${val1} + ${val2} = ${sum}`;
+                    entry.style.padding = '4px 0';
+                    entry.style.borderBottom = '1px solid rgba(255,255,255,0.03)';
+                    historyDiv.prepend(entry);
+                    if (historyDiv.children.length > 10) {
+                        historyDiv.removeChild(historyDiv.lastChild);
+                    }
+
+                    rollBtn.disabled = false;
+                    rollBtn.textContent = '🎲 Бросить кости';
+                }, 400);
+            }
+
+            rollBtn.addEventListener('click', rollDice);
+
+            setTimeout(() => {
+                const val1 = Math.floor(Math.random() * 6) + 1;
+                const val2 = Math.floor(Math.random() * 6) + 1;
+                dice1El.textContent = DICE_FACES[val1 - 1];
+                dice2El.textContent = DICE_FACES[val2 - 1];
+                diceSumEl.textContent = val1 + val2;
+                historyDiv.innerHTML = `<div style="padding:4px 0; color:#5a5a74;">Начните игру!</div>`;
+            }, 100);
+        })();
+    </script>
+</body>
+</html>
